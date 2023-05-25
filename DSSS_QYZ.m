@@ -10,11 +10,13 @@ Rb=10e+3;%信源速率10kbps
 t=10;%仿真时间1s
 SF=64;%扩频因子
 M=2;%调制阶数：2，采用BPSK调制
+
 fs=SF*10*KHz;%设置采样率和信源速率的64倍相同，即每个比特进行一次采样.SF=64时，载频为640KHz
 fc=0.5*fs;%满足采样间隔
 Ts=1/fs;
 bitNum=Rb*t;
 t_seq=linspace(Ts,t,SF*bitNum);
+
 channel='AWGN';%'AWGN'or'Inteference'
 SNR=-15:1:-10;
 %SNR=0;

@@ -19,14 +19,12 @@ SNR=-15:1:-10;
 SF=4;%扩频因子
 M=4;%QPSK调制
 
-
 bitNum=Rb*t;
 
 upSample = 4;
 syncSF = 128;   %% Spread factor of pilot symbols always is 128
 chipRate = 2.5e6;
 lengthZeroPad = 40*syncSF;  %% zero padding to the synchronization signal to isolate two synchronization headers.
-
 %% data gen
 data = randi([0 1],bitNum,1);  %%% Random message data
 %% CRC
@@ -42,16 +40,19 @@ hTEnc = comm.TurboEncoder('TrellisStructure',poly2trellis(4,...
 dataTurbo = step(hTEnc,dataBlockCRC);   %% Turbo Encoder
 %% QPSK
 dataMod=qammod(dataTurbo,M);
+%% Spread spectrum
+% Generate 128 PN sequence
+h1 = commsrc.pn('GenPloy',[1 0 0 0 1 1 1 1],'InitialStates',[0 0 0 0 0 1 0],'NumBitsOut',127);
+m1 = generate(h1);
+m1 = (0.5 - m1)*2;
+PN = [m1;1];  %% zero pading to extend the 127-bit m sequence to a 128-bit PN sequence
+spreadedDataMatrix = dataMod*PN;  %% spreading of data symbols
+spreadedData = reshape(spreadedDataMatrix.',[1,length(modSignal)*SF]);
 %% Upsample
-upSampleSignal = zeros(1,length(modSignal)*upSample);
+upSampleSignal = zeros(1,length(spreadedData)*upSample);
 for m = 1:length(modSignal)
     upSampleSignal((m-1)*upSample+1:m*upSample) = modSignal(m);
 end;
-
-%% Spread spectrum
-spreadedDataMatrix = modSignal*PN;  %% spreading of data symbols
-spreadedData = reshape(spreadedDataMatrix.',[1,length(modSignal)*SF]);
-
 %%% Construct Frame
 %% pilot
 pilot = [0 1];
